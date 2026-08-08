@@ -84,12 +84,13 @@ def chat():
         }), 400
 
     remaining_tokens = max_session_tokens - current_total_tokens
-    max_tokens_for_model = min(1024, max(50, remaining_tokens))
+    max_tokens_for_model = min(1024, max(300, remaining_tokens))  # tối thiểu 200 để model có thể trả lời
 
     try:
         client = OpenAI(
             api_key=api_key,
-            base_url=fpt_base_url
+            base_url=fpt_base_url,
+            timeout=60.0  # 60 giây timeout, tránh treo mãi
         )
 
         def generate():
@@ -103,14 +104,45 @@ def chat():
             )
 
             completion_text = ""
+            thinking_buffer = ""  # buffer cho phần <think> của GLM
+            in_thinking = False
 
             for chunk in completion:
                 if chunk.choices and len(chunk.choices) > 0:
                     delta = chunk.choices[0].delta
                     if delta and delta.content:
-                        content = delta.content
-                        completion_text += content
-                        yield f"data: {json.dumps({'content': content})}\n\n"
+                        raw = delta.content
+
+                        # Lọc bỏ thẻ <think>...</think> của GLM (thinking mode)
+                        thinking_buffer += raw
+                        while True:
+                            if not in_thinking:
+                                start = thinking_buffer.find('<think>')
+                                if start == -1:
+                                    # Không có thẻ think, flush hết
+                                    content = thinking_buffer
+                                    thinking_buffer = ""
+                                    if content:
+                                        completion_text += content
+                                        yield f"data: {json.dumps({'content': content})}\n\n"
+                                    break
+                                else:
+                                    # Flush phần trước thẻ think
+                                    before = thinking_buffer[:start]
+                                    if before:
+                                        completion_text += before
+                                        yield f"data: {json.dumps({'content': before})}\n\n"
+                                    thinking_buffer = thinking_buffer[start:]
+                                    in_thinking = True
+                            else:
+                                end = thinking_buffer.find('</think>')
+                                if end == -1:
+                                    # Chưa thấy thẻ đóng, giữ trong buffer
+                                    break
+                                else:
+                                    # Bỏ qua toàn bộ phần thinking
+                                    thinking_buffer = thinking_buffer[end + len('</think>'):]
+                                    in_thinking = False
 
             # After stream completes, calculate final usage
             completion_tokens = estimate_tokens(completion_text)
