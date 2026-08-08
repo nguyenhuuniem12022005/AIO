@@ -135,8 +135,7 @@ def chat():
                             continue
                         delta = choices[0].get("delta", {})
 
-                        # content = câu trả lời; reasoning_content = suy nghĩ nội bộ
-                        # FPT Cloud GLM-5.2 thường chỉ dùng reasoning_content
+                        # Qwen dùng content, GLM dùng reasoning_content
                         chunk_text = delta.get("content") or delta.get("reasoning_content") or ""
                         if chunk_text:
                             completion_text += chunk_text
