@@ -94,72 +94,41 @@ def chat():
         )
 
         def generate():
-            completion = client.chat.completions.create(
+            completion_text = ""
+
+            # Dùng raw HTTP stream để đọc được field reasoning_content của GLM
+            # OpenAI SDK bỏ qua field này nên phải đọc JSON thô
+            with client.chat.completions.with_streaming_response.create(
                 model=fpt_model,
                 messages=messages,
                 temperature=0.7,
                 max_tokens=max_tokens_for_model,
                 top_p=0.95,
                 stream=True
-            )
+            ) as response:
+                for line in response.iter_lines():
+                    if not line or line == "data: [DONE]":
+                        continue
+                    if not line.startswith("data: "):
+                        continue
+                    try:
+                        data = json.loads(line[6:])
+                        choices = data.get("choices", [])
+                        if not choices:
+                            continue
+                        delta = choices[0].get("delta", {})
 
-            completion_text = ""
-            thinking_buffer = ""  # buffer cho phần <think> của GLM
-            in_thinking = False
+                        # Đọc cả content lẫn reasoning_content (GLM-5.2 dùng reasoning_content)
+                        chunk_text = delta.get("content") or delta.get("reasoning_content") or ""
+                        if chunk_text:
+                            completion_text += chunk_text
+                            yield f"data: {json.dumps({'content': chunk_text})}\n\n"
+                    except Exception:
+                        continue
 
-            for chunk in completion:
-                if chunk.choices and len(chunk.choices) > 0:
-                    delta = chunk.choices[0].delta
-                    if delta and delta.content:
-                        raw = delta.content
-
-                        # Lọc bỏ thẻ <think>...</think> của GLM (thinking mode)
-                        thinking_buffer += raw
-                        while True:
-                            if not in_thinking:
-                                start = thinking_buffer.find('<think>')
-                                if start == -1:
-                                    # Không có thẻ think, flush hết
-                                    content = thinking_buffer
-                                    thinking_buffer = ""
-                                    if content:
-                                        completion_text += content
-                                        yield f"data: {json.dumps({'content': content})}\n\n"
-                                    break
-                                else:
-                                    # Flush phần trước thẻ think
-                                    before = thinking_buffer[:start]
-                                    if before:
-                                        completion_text += before
-                                        yield f"data: {json.dumps({'content': before})}\n\n"
-                                    thinking_buffer = thinking_buffer[start:]
-                                    in_thinking = True
-                            else:
-                                end = thinking_buffer.find('</think>')
-                                if end == -1:
-                                    # Chưa thấy thẻ đóng, giữ trong buffer
-                                    break
-                                else:
-                                    # Bỏ qua toàn bộ phần thinking
-                                    thinking_buffer = thinking_buffer[end + len('</think>'):]
-                                    in_thinking = False
-
-            # Sau khi stream kết thúc: flush phần còn lại trong thinking_buffer
-            # (trường hợp GLM kết thúc stream khi vẫn đang trong <think>)
-            if thinking_buffer:
-                if in_thinking:
-                    # Chưa thấy </think> → bỏ thẻ <think> và lấy nội dung còn lại
-                    leftover = thinking_buffer.replace('<think>', '').strip()
-                else:
-                    leftover = thinking_buffer.strip()
-                if leftover:
-                    completion_text += leftover
-                    yield f"data: {json.dumps({'content': leftover})}\n\n"
-
-            # After stream completes, calculate final usage
+            # Tính token sau khi stream xong
             completion_tokens = estimate_tokens(completion_text)
             new_session_total = current_total_tokens + completion_tokens
-
             yield f"data: {json.dumps({'done': True, 'promptTokens': prompt_tokens, 'completionTokens': completion_tokens, 'newSessionTotal': new_session_total})}\n\n"
 
         return Response(generate(), mimetype="text/event-stream")
