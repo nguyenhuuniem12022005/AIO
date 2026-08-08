@@ -136,11 +136,9 @@ def chat():
                             continue
                         delta = choices[0].get("delta", {})
 
-                        # Ưu tiên content (câu trả lời thật), fallback sang reasoning_content
+                        # Chỉ hiển thị content (câu trả lời thật) ra UI
+                        # reasoning_content là phần suy nghĩ nội bộ → bỏ qua hoàn toàn
                         chunk_text = delta.get("content") or ""
-                        if not chunk_text:
-                            # Chỉ dùng reasoning_content nếu content rỗng hẳn
-                            chunk_text = delta.get("reasoning_content") or ""
                         if chunk_text:
                             completion_text += chunk_text
                             yield f"data: {json.dumps({'content': chunk_text})}\n\n"
