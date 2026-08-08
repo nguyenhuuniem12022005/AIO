@@ -74,6 +74,20 @@ def chat():
     if not messages:
         return jsonify({"error": "Danh sách tin nhắn không được để trống!"}), 400
 
+    # Thêm system prompt để GLM trả lời tiếng Việt, không lộ quá trình suy nghĩ
+    system_prompt = {
+        "role": "system",
+        "content": (
+            "Bạn là trợ lý AI thông minh, thân thiện. "
+            "LUÔN trả lời bằng tiếng Việt, trừ khi người dùng yêu cầu ngôn ngữ khác. "
+            "Trả lời trực tiếp, súc tích, đúng trọng tâm. "
+            "KHÔNG hiển thị quá trình suy nghĩ hay phân tích nội bộ."
+        )
+    }
+    # Chỉ thêm system prompt nếu chưa có
+    if not messages or messages[0].get("role") != "system":
+        messages = [system_prompt] + messages
+
     # Chỉ tính token của tin nhắn MỚI NHẤT (session_used_tokens đã đếm lịch sử rồi)
     new_message_content = messages[-1].get("content", "") if messages else ""
     prompt_tokens = estimate_tokens(new_message_content)
