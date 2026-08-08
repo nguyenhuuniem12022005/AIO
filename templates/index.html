@@ -3,442 +3,390 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FPT Cloud AI Assistant - Qwen3.6-27B Chatbot</title>
-  
-  <!-- Google Fonts & Icons -->
+  <title>FPT AI Chatbot — 2000 tokens/session</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- Markdown & Code Highlighting -->
+
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
 
   <style>
     :root {
-      --bg-dark: #090d16;
-      --bg-sidebar: #111827;
-      --bg-card: #1f2937;
-      --bg-chat-user: #1e293b;
-      --bg-chat-ai: #111827;
-      --accent: #10b981;
-      --accent-hover: #059669;
-      --accent-light: rgba(16, 185, 129, 0.15);
-      --text-main: #f3f4f6;
-      --text-muted: #9ca3af;
-      --border-color: #374151;
-      --danger: #ef4444;
-      --warning: #f59e0b;
+      --bg: #0c0f14;
+      --bg-panel: #12161e;
+      --bg-elevated: #1a2030;
+      --bg-user: #1a2332;
+      --accent: #3dd68c;
+      --accent-dim: rgba(61, 214, 140, 0.14);
+      --accent-hover: #2bb873;
+      --text: #e8ecf2;
+      --muted: #8b95a8;
+      --border: #2a3344;
+      --danger: #ff5c5c;
+      --warning: #e8a838;
+      --font: 'IBM Plex Sans', system-ui, sans-serif;
+      --mono: 'IBM Plex Mono', ui-monospace, monospace;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); }
 
     body {
-      background-color: var(--bg-dark);
-      color: var(--text-main);
+      background: var(--bg);
+      color: var(--text);
       height: 100vh;
       display: flex;
       overflow: hidden;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 0% 0%, rgba(61, 214, 140, 0.06), transparent 50%),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(56, 120, 200, 0.05), transparent 45%);
     }
 
-    /* Sidebar */
     .sidebar {
-      width: 300px;
-      background-color: var(--bg-sidebar);
-      border-right: 1px solid var(--border-color);
+      width: 280px;
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      padding: 1.25rem;
-      gap: 1.25rem;
+      padding: 1.1rem;
+      gap: 1rem;
       z-index: 10;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.65rem;
       font-weight: 700;
-      font-size: 1.15rem;
-      color: #fff;
+      font-size: 1.05rem;
     }
 
-    .brand i {
-      color: var(--accent);
-      font-size: 1.5rem;
-    }
+    .brand i { color: var(--accent); font-size: 1.35rem; }
 
     .brand-badge {
-      background: var(--accent-light);
+      background: var(--accent-dim);
       color: var(--accent);
-      font-size: 0.7rem;
-      padding: 0.2rem 0.5rem;
-      border-radius: 9999px;
-      border: 1px solid rgba(16, 185, 129, 0.3);
+      font-size: 0.65rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      border: 1px solid rgba(61, 214, 140, 0.35);
       font-weight: 600;
+      font-family: var(--mono);
+      letter-spacing: 0.02em;
     }
 
-    .btn-new-session {
-      background: linear-gradient(135deg, var(--accent), #047857);
-      color: white;
+    .btn-primary {
+      background: var(--accent);
+      color: #06140c;
       border: none;
-      border-radius: 0.75rem;
-      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
       font-weight: 600;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.6rem;
+      gap: 0.5rem;
       cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+      transition: background 0.15s, transform 0.1s;
     }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:active { transform: scale(0.98); }
 
-    .btn-new-session:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
-    }
-
-    /* Token Progress Card */
     .token-card {
-      background-color: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 0.85rem;
-      padding: 1rem;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.9rem;
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 0.65rem;
     }
 
     .token-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      font-size: 0.85rem;
-      color: var(--text-muted);
+      font-size: 0.78rem;
+      color: var(--muted);
       font-weight: 500;
     }
 
     .token-value {
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       font-weight: 700;
-      color: var(--text-main);
+      font-family: var(--mono);
     }
 
     .progress-bar-bg {
-      height: 8px;
-      background-color: #374151;
-      border-radius: 9999px;
+      height: 6px;
+      background: #2a3344;
+      border-radius: 4px;
       overflow: hidden;
     }
 
     .progress-bar-fill {
       height: 100%;
       width: 0%;
-      background-color: var(--accent);
-      border-radius: 9999px;
-      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease;
+      background: var(--accent);
+      border-radius: 4px;
+      transition: width 0.35s ease, background-color 0.35s ease;
     }
 
     .token-info-text {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      line-height: 1.4;
+      font-size: 0.72rem;
+      color: var(--muted);
+      line-height: 1.45;
     }
 
-    .sidebar-section-title {
-      font-size: 0.75rem;
+    .section-label {
+      font-size: 0.68rem;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      color: var(--muted);
       font-weight: 600;
     }
 
     .config-card {
-      background-color: rgba(31, 41, 55, 0.5);
-      border: 1px dashed var(--border-color);
-      border-radius: 0.75rem;
-      padding: 0.85rem;
-      font-size: 0.85rem;
+      background: rgba(26, 32, 48, 0.6);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-size: 0.8rem;
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.4rem;
     }
 
     .config-item {
       display: flex;
       justify-content: space-between;
-      color: var(--text-muted);
+      gap: 0.5rem;
+      color: var(--muted);
     }
-
     .config-item span:last-child {
-      color: var(--text-main);
+      color: var(--text);
       font-weight: 500;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      text-align: right;
+      word-break: break-all;
     }
 
-    .btn-settings {
-      background-color: transparent;
-      border: 1px solid var(--border-color);
-      color: var(--text-main);
-      padding: 0.6rem;
-      border-radius: 0.6rem;
-      font-size: 0.85rem;
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.55rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
-      transition: background 0.2s;
+      gap: 0.45rem;
+      transition: background 0.15s;
+      width: 100%;
     }
+    .btn-ghost:hover { background: var(--bg-elevated); }
 
-    .btn-settings:hover {
-      background-color: var(--bg-card);
-    }
-
-    /* Main Chat Layout */
-    .main-chat {
+    .main {
       flex: 1;
       display: flex;
       flex-direction: column;
-      height: 100vh;
-      background-color: var(--bg-dark);
-      position: relative;
+      min-width: 0;
     }
 
-    /* Top Bar */
     .top-bar {
-      height: 60px;
-      border-bottom: 1px solid var(--border-color);
+      height: 52px;
+      border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 1.5rem;
-      background-color: rgba(17, 24, 39, 0.8);
+      padding: 0 1.25rem;
+      background: rgba(18, 22, 30, 0.85);
+      -webkit-backdrop-filter: blur(8px);
       backdrop-filter: blur(8px);
     }
 
-    .model-info {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .model-name {
-      font-weight: 700;
-      font-size: 1rem;
-
-    }
-
+    .model-info { display: flex; align-items: center; gap: 0.6rem; }
+    .model-name { font-weight: 600; font-size: 0.92rem; }
     .status-dot {
-      width: 8px;
-      height: 8px;
-      background-color: var(--accent);
+      width: 7px; height: 7px;
+      background: var(--accent);
       border-radius: 50%;
-      box-shadow: 0 0 8px var(--accent);
+      box-shadow: 0 0 6px var(--accent);
     }
 
-    /* Chat Messages Container */
-    .messages-container {
+    .messages {
       flex: 1;
       overflow-y: auto;
-      padding: 1.5rem;
+      padding: 1.25rem;
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
-      scroll-behavior: smooth;
+      gap: 1.25rem;
     }
 
-    /* Hero / Welcome Banner */
-    .welcome-hero {
-      max-width: 650px;
+    .welcome {
+      max-width: 640px;
       margin: auto;
-      text-align: center;
+      text-align: left;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 1rem;
-      padding: 2rem;
-      background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, rgba(0,0,0,0) 70%);
-      border-radius: 1.5rem;
+      gap: 0.85rem;
+      padding: 1.5rem;
     }
 
-    .welcome-hero i {
-      font-size: 3rem;
+    .welcome .eyebrow {
+      font-family: var(--mono);
+      font-size: 0.75rem;
       color: var(--accent);
+      letter-spacing: 0.04em;
     }
 
-    .welcome-hero h2 {
-      font-size: 1.75rem;
+    .welcome h2 {
+      font-size: 1.55rem;
       font-weight: 700;
+      letter-spacing: -0.02em;
     }
 
-    .welcome-hero p {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      line-height: 1.6;
+    .welcome p {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.55;
     }
 
     .sample-prompts {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-      width: 100%;
-      margin-top: 1rem;
+      gap: 0.6rem;
+      margin-top: 0.5rem;
     }
 
     .prompt-card {
-      background-color: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 0.75rem;
-      padding: 0.85rem 1rem;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 0.9rem;
       text-align: left;
       cursor: pointer;
-      font-size: 0.85rem;
-      color: var(--text-main);
-      transition: all 0.2s ease;
+      font-size: 0.8rem;
+      color: var(--text);
+      transition: border-color 0.15s, background 0.15s;
+      line-height: 1.4;
     }
-
     .prompt-card:hover {
       border-color: var(--accent);
-      transform: translateY(-2px);
-      background-color: #263346;
+      background: #1e2738;
     }
 
-    /* Message Bubbles */
     .message-row {
       display: flex;
-      gap: 1rem;
-      max-width: 900px;
+      gap: 0.85rem;
+      max-width: 860px;
       width: 100%;
       margin: 0 auto;
     }
-
-    .message-row.user {
-      justify-content: flex-end;
-    }
+    .message-row.user { justify-content: flex-end; }
 
     .avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 0.6rem;
+      width: 32px; height: 32px;
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1rem;
+      font-size: 0.85rem;
       flex-shrink: 0;
     }
-
-    .message-row.assistant .avatar {
-      background-color: var(--accent);
-      color: white;
-    }
-
-    .message-row.user .avatar {
-      background-color: #3b82f6;
-      color: white;
-    }
+    .message-row.assistant .avatar { background: var(--accent); color: #06140c; }
+    .message-row.user .avatar { background: #3b82f6; color: #fff; }
 
     .message-content {
-      background-color: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 1rem;
-      padding: 1rem 1.25rem;
-      font-size: 0.95rem;
-      line-height: 1.6;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.9rem 1.05rem;
+      font-size: 0.92rem;
+      line-height: 1.55;
       max-width: 85%;
       word-break: break-word;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
-
     .message-row.user .message-content {
-      background-color: var(--bg-chat-user);
+      background: var(--bg-user);
       border-color: #3b82f640;
-      border-top-right-radius: 0.2rem;
     }
 
-    .message-row.assistant .message-content {
-      background-color: var(--bg-sidebar);
-      border-top-left-radius: 0.2rem;
-    }
-
-    /* Markdown Styling in Messages */
-    .message-content p {
-      margin-bottom: 0.75rem;
-    }
-    .message-content p:last-child {
-      margin-bottom: 0;
-    }
+    .message-content p { margin-bottom: 0.65rem; }
+    .message-content p:last-child { margin-bottom: 0; }
 
     .message-content code {
-      font-family: 'Fira Code', monospace;
-      background-color: rgba(0, 0, 0, 0.4);
-      padding: 0.15rem 0.4rem;
-      border-radius: 0.3rem;
-      font-size: 0.88rem;
+      font-family: var(--mono);
+      background: rgba(0, 0, 0, 0.35);
+      padding: 0.12rem 0.35rem;
+      border-radius: 3px;
+      font-size: 0.84rem;
     }
 
     .message-content pre {
-      background-color: #121824 !important;
-      border-radius: 0.6rem;
-      padding: 1rem;
-      margin: 0.75rem 0;
+      background: #0a0d12 !important;
+      border-radius: 8px;
+      padding: 0.9rem;
+      margin: 0.65rem 0;
       overflow-x: auto;
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--border);
+    }
+    .message-content pre code {
+      background: transparent !important;
+      padding: 0;
     }
 
-    .message-content pre code {
-      background-color: transparent !important;
-      padding: 0;
+    .turn-cost {
+      margin-top: 0.6rem;
+      padding-top: 0.5rem;
+      border-top: 1px dashed var(--border);
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--muted);
     }
 
     .typing-cursor {
       display: inline-block;
-      width: 8px;
-      height: 16px;
-      background-color: var(--accent);
-      margin-left: 4px;
+      width: 7px; height: 14px;
+      background: var(--accent);
+      margin-left: 3px;
       animation: blink 1s infinite;
       vertical-align: middle;
     }
-
     @keyframes blink {
       0%, 100% { opacity: 1; }
       50% { opacity: 0; }
     }
 
-    /* Input Footer Area */
     .input-area {
-      padding: 1rem 1.5rem 1.5rem 1.5rem;
-      background-color: var(--bg-dark);
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 0.9rem 1.25rem 1.25rem;
+      border-top: 1px solid rgba(255,255,255,0.04);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.65rem;
     }
 
     .input-container {
-      max-width: 900px;
+      max-width: 860px;
       width: 100%;
-      background-color: var(--bg-sidebar);
-      border: 1px solid var(--border-color);
-      border-radius: 1rem;
-      padding: 0.6rem 0.8rem 0.6rem 1.2rem;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.55rem 0.65rem 0.55rem 1rem;
       display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      align-items: flex-end;
+      gap: 0.65rem;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
-
     .input-container:focus-within {
       border-color: var(--accent);
-      box-shadow: 0 0 0 2px var(--accent-light);
+      box-shadow: 0 0 0 2px var(--accent-dim);
     }
 
     .chat-textarea {
@@ -446,68 +394,59 @@
       background: transparent;
       border: none;
       outline: none;
-      color: var(--text-main);
-      font-size: 0.95rem;
+      color: var(--text);
+      font-size: 0.92rem;
       resize: none;
-      max-height: 150px;
+      max-height: 140px;
       height: 24px;
+      line-height: 1.45;
     }
 
     .btn-send {
-      background-color: var(--accent);
-      color: white;
+      background: var(--accent);
+      color: #06140c;
       border: none;
-      width: 38px;
-      height: 38px;
-      border-radius: 0.75rem;
+      width: 36px; height: 36px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
       flex-shrink: 0;
     }
+    .btn-send:hover { background: var(--accent-hover); }
+    .btn-send:disabled { background: #2a3344; color: var(--muted); cursor: not-allowed; }
 
-    .btn-send:hover {
-      background-color: var(--accent-hover);
-    }
-
-    .btn-send:disabled {
-      background-color: #374151;
-      cursor: not-allowed;
-    }
-
-    /* Limit Warning Banner */
     .limit-banner {
       width: 100%;
-      max-width: 900px;
-      background-color: rgba(239, 68, 68, 0.15);
-      border: 1px solid rgba(239, 68, 68, 0.4);
-      color: #fca5a5;
-      padding: 0.75rem 1rem;
-      border-radius: 0.75rem;
-      font-size: 0.85rem;
+      max-width: 860px;
+      background: rgba(255, 92, 92, 0.12);
+      border: 1px solid rgba(255, 92, 92, 0.35);
+      color: #ffb4b4;
+      padding: 0.65rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
       display: none;
       align-items: center;
       justify-content: space-between;
-      gap: 0.75rem;
+      gap: 0.65rem;
     }
-
     .limit-banner button {
-      background-color: var(--danger);
-      color: white;
+      background: var(--danger);
+      color: #fff;
       border: none;
-      padding: 0.4rem 0.8rem;
-      border-radius: 0.5rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: 6px;
       font-weight: 600;
       cursor: pointer;
+      white-space: nowrap;
     }
 
-    /* Settings Modal */
     .modal-overlay {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: rgba(0, 0, 0, 0.75);
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      -webkit-backdrop-filter: blur(4px);
       backdrop-filter: blur(4px);
       display: none;
       align-items: center;
@@ -516,16 +455,15 @@
     }
 
     .modal-content {
-      background-color: var(--bg-sidebar);
-      border: 1px solid var(--border-color);
-      border-radius: 1rem;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
       width: 100%;
-      max-width: 480px;
-      padding: 1.5rem;
+      max-width: 440px;
+      padding: 1.35rem;
       display: flex;
       flex-direction: column;
-      gap: 1.25rem;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      gap: 1.1rem;
     }
 
     .modal-header {
@@ -533,185 +471,176 @@
       justify-content: space-between;
       align-items: center;
     }
-
-    .modal-header h3 {
-      font-size: 1.15rem;
-      font-weight: 700;
-    }
+    .modal-header h3 { font-size: 1.05rem; font-weight: 700; }
 
     .modal-body label {
       display: block;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-bottom: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
     }
 
     .modal-input {
       width: 100%;
-      background-color: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 0.6rem;
-      padding: 0.75rem;
-      color: var(--text-main);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.7rem;
+      color: var(--text);
       outline: none;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
+      font-family: var(--mono);
     }
-
-    .modal-input:focus {
-      border-color: var(--accent);
-    }
+    .modal-input:focus { border-color: var(--accent); }
 
     .modal-footer {
       display: flex;
       justify-content: flex-end;
-      gap: 0.75rem;
+      gap: 0.6rem;
+    }
+    .modal-footer .btn-ghost { width: auto; padding: 0.5rem 0.9rem; }
+    .modal-footer .btn-primary { padding: 0.5rem 1rem; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .sample-prompts { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-
-  <!-- Sidebar -->
   <aside class="sidebar">
     <div class="brand">
-      <i class="fa-solid fa-brain"></i>
-      <span>FPT Cloud AI</span>
-      <span class="brand-badge">2000 Tokens</span>
+      <i class="fa-solid fa-terminal"></i>
+      <span>FPT AI Chat</span>
+      <span class="brand-badge" id="badge-limit">2000 tok</span>
     </div>
 
-    <button class="btn-new-session" id="btn-new-session">
+    <button class="btn-primary" id="btn-new-session" type="button">
       <i class="fa-solid fa-plus"></i>
-      <span>Tạo phiên mới</span>
+      <span>New session</span>
     </button>
 
-    <!-- Token Tracker Meter -->
     <div class="token-card">
       <div class="token-header">
-        <span>Session Token Limit</span>
-        <i class="fa-solid fa-bolt" style="color: var(--accent);"></i>
+        <span>Session budget</span>
+        <i class="fa-solid fa-gauge-high" style="color: var(--accent);"></i>
       </div>
       <div class="token-value" id="token-display">0 / 2000</div>
       <div class="progress-bar-bg">
         <div class="progress-bar-fill" id="token-progress-fill"></div>
       </div>
       <div class="token-info-text" id="token-info-text">
-        Mỗi session giới hạn tối đa 2000 tokens cho bài luyện tập.
+        Giới hạn 2000 tokens/phiên, đếm chính xác theo <code>usage</code> trả về từ API FPT
+        (prompt + trả lời). Gần hết budget, các lượt cũ sẽ được cắt tự động.
       </div>
     </div>
 
-    <div class="sidebar-section-title">Thông tin cấu hình</div>
+    <div class="section-label">FPT Marketplace</div>
     <div class="config-card">
       <div class="config-item">
-        <span>Endpoint:</span>
-        <span id="cfg-url">FPT Cloud</span>
+        <span>Base URL</span>
+        <span id="cfg-url">…/v1</span>
       </div>
       <div class="config-item">
-        <span>Model:</span>
+        <span>Model</span>
         <span id="cfg-model">Qwen3.6-27B</span>
       </div>
       <div class="config-item">
-        <span>API Key Status:</span>
-        <span id="cfg-key-status" style="color: var(--warning);">Đang kiểm tra...</span>
+        <span>API Key</span>
+        <span id="cfg-key-status" style="color: var(--warning);">…</span>
       </div>
     </div>
 
     <div style="margin-top: auto;">
-      <button class="btn-settings" id="btn-open-settings">
-        <i class="fa-solid fa-gear"></i>
-        <span>Cấu hình API Key</span>
+      <button class="btn-ghost" id="btn-open-settings" type="button">
+        <i class="fa-solid fa-key"></i>
+        <span>API Key</span>
       </button>
     </div>
   </aside>
 
-  <!-- Main Chat Workspace -->
-  <main class="main-chat">
-    <!-- Top Bar -->
+  <main class="main">
     <header class="top-bar">
       <div class="model-info">
         <div class="status-dot"></div>
-        <div class="model-name">Qwen3.6-27B (FPT Cloud API)</div>
+        <div class="model-name" id="top-model-name">Qwen3.6-27B · FPT Cloud</div>
       </div>
-      <div style="font-size: 0.85rem; color: var(--text-muted);">
-        <i class="fa-solid fa-graduation-cap"></i> Practice Session Mode
+      <div style="font-size: 0.78rem; color: var(--muted); font-family: var(--mono);">
+        chat · max 2000 tok/session
       </div>
     </header>
 
-    <!-- Messages Container -->
-    <div class="messages-container" id="messages-container">
-      <!-- Welcome Hero Section -->
-      <div class="welcome-hero" id="welcome-hero">
-        <i class="fa-solid fa-microchip"></i>
-        <h2>Chào mừng bạn đến với FPT Cloud AI Chatbot!</h2>
+    <div class="messages" id="messages-container">
+      <div class="welcome" id="welcome-hero">
+        <div class="eyebrow">FPT CLOUD AI · CHATBOT</div>
+        <h2>Mình có thể giúp gì cho bạn?</h2>
         <p>
-          Hệ thống luyện tập tương tác mô hình AI <strong>Qwen3.6-27B</strong> kết nối trực tiếp qua API FPT Cloud. Mỗi phiên làm việc giới hạn <strong>2000 tokens</strong> để giúp bạn luyện tập prompt tối ưu.
+          Trợ lý AI hội thoại chạy trên FPT Cloud API. Hỏi bất cứ điều gì — kiến thức chung,
+          viết nội dung, giải thích, lập trình. Mỗi phiên giới hạn <strong>2000 tokens</strong>,
+          hết thì bấm New session.
         </p>
-
         <div class="sample-prompts">
-          <div class="prompt-card" onclick="useSamplePrompt('Hãy giải thích nguyên lý hoạt động của lỗ đen vũ trụ trong 2 câu.')">
-            🌌 Giải thích nguyên lý Lỗ Đen vũ trụ
+          <div class="prompt-card" onclick="useSamplePrompt('Giải thích cho tôi cách hoạt động của blockchain một cách dễ hiểu.')">
+            Giải thích blockchain dễ hiểu
           </div>
-          <div class="prompt-card" onclick="useSamplePrompt('Viết một script Python đơn giản dùng thư viện Flask để tạo hello world server.')">
-            💻 Viết script Python Flask Hello World
+          <div class="prompt-card" onclick="useSamplePrompt('Gợi ý cho tôi 5 ý tưởng tên cho một quán cà phê phong cách vintage.')">
+            Gợi ý tên quán cà phê
           </div>
-          <div class="prompt-card" onclick="useSamplePrompt('Cho tôi 3 mẹo để tối ưu hóa Prompting giúp tiết kiệm tokens.')">
-            💡 3 mẹo tối ưu Prompting tiết kiệm tokens
+          <div class="prompt-card" onclick="useSamplePrompt('Viết hàm Python đọc file CSV và trả về danh sách dict.')">
+            Viết hàm Python đọc CSV
           </div>
-          <div class="prompt-card" onclick="useSamplePrompt('So sánh điểm mạnh giữa Python và JavaScript trong 3 gạch đầu dòng.')">
-            ⚔️ So sánh Python vs JavaScript
+          <div class="prompt-card" onclick="useSamplePrompt('Lập kế hoạch học tiếng Anh trong 1 tháng cho người đi làm.')">
+            Kế hoạch học tiếng Anh 1 tháng
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Limit Banner -->
     <div class="input-area">
       <div class="limit-banner" id="limit-banner">
-        <span><i class="fa-solid fa-circle-exclamation"></i> Phiên này đã đạt giới hạn 2000 tokens! Vui lòng tạo phiên mới để tiếp tục.</span>
-        <button onclick="resetSession()">Tạo phiên mới</button>
+        <span><i class="fa-solid fa-circle-exclamation"></i> Đã đạt 2000 tokens/session. Tạo session mới để tiếp tục.</span>
+        <button type="button" onclick="resetSession()">New session</button>
       </div>
-
-      <!-- Input Field -->
       <div class="input-container">
-        <textarea 
-          class="chat-textarea" 
-          id="chat-textarea" 
-          placeholder="Nhập câu hỏi của bạn (Ấn Enter để gửi, Shift+Enter để xuống dòng)..."
+        <textarea
+          class="chat-textarea"
+          id="chat-textarea"
+          placeholder="Nhập câu hỏi của bạn… (Enter gửi, Shift+Enter xuống dòng)"
           rows="1"></textarea>
-        <button class="btn-send" id="btn-send">
-          <i class="fa-solid fa-paper-plane"></i>
+        <button class="btn-send" id="btn-send" type="button" title="Send">
+          <i class="fa-solid fa-arrow-up"></i>
         </button>
       </div>
     </div>
   </main>
 
-  <!-- Settings Modal -->
   <div class="modal-overlay" id="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Cấu hình FPT Cloud API</h3>
+        <h3>FPT Cloud API Key</h3>
         <i class="fa-solid fa-xmark" style="cursor: pointer;" id="btn-close-modal"></i>
       </div>
       <div class="modal-body">
-        <label for="api-key-input">FPT Cloud API Key:</label>
-        <input type="password" id="api-key-input" class="modal-input" placeholder="Nhập FPT API Key của bạn...">
-        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
-          Lưu ý: API Key của bạn sẽ được bảo mật và lưu trữ trong bộ nhớ trình duyệt local.
+        <label for="api-key-input">API Key (Bearer) — marketplace.fptcloud.com</label>
+        <input type="password" id="api-key-input" class="modal-input" placeholder="sk-…">
+        <p style="font-size: 0.72rem; color: var(--muted); margin-top: 0.5rem; line-height: 1.4;">
+          Base URL giống Cline/OpenCode: <code style="font-family: var(--mono);">https://mkp-api.fptcloud.com/v1</code>.
+          Key chỉ lưu localStorage trình duyệt.
         </p>
       </div>
       <div class="modal-footer">
-        <button class="btn-settings" id="btn-cancel-modal">Hủy</button>
-        <button class="btn-new-session" id="btn-save-key" style="padding: 0.6rem 1.2rem;">Lưu Cấu Hình</button>
+        <button class="btn-ghost" id="btn-cancel-modal" type="button">Hủy</button>
+        <button class="btn-primary" id="btn-save-key" type="button">Lưu</button>
       </div>
     </div>
   </div>
 
   <script>
-    // State management
     let conversationHistory = [];
     let sessionTokens = 0;
-    const MAX_SESSION_TOKENS = 2000;
+    let maxSessionTokens = 2000;
     let customApiKey = localStorage.getItem("fpt_api_key") || "";
 
-    // DOM Elements
     const messagesContainer = document.getElementById('messages-container');
     const welcomeHero = document.getElementById('welcome-hero');
     const chatTextarea = document.getElementById('chat-textarea');
@@ -724,9 +653,8 @@
     const modalOverlay = document.getElementById('modal-overlay');
     const apiKeyInput = document.getElementById('api-key-input');
 
-    // Configure Marked options
     marked.setOptions({
-      highlight: function(code, lang) {
+      highlight(code, lang) {
         if (lang && hljs.getLanguage(lang)) {
           return hljs.highlight(code, { language: lang }).value;
         }
@@ -735,13 +663,12 @@
       breaks: true
     });
 
-    // Auto-resize textarea
-    chatTextarea.addEventListener('input', function() {
+    chatTextarea.addEventListener('input', function () {
       this.style.height = 'auto';
-      this.style.height = (this.scrollHeight > 150 ? 150 : this.scrollHeight) + 'px';
+      this.style.height = Math.min(this.scrollHeight, 140) + 'px';
     });
 
-    chatTextarea.addEventListener('keydown', function(e) {
+    chatTextarea.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendMessage();
@@ -751,40 +678,44 @@
     btnSend.addEventListener('click', sendMessage);
     btnNewSession.addEventListener('click', resetSession);
 
-    // Fetch initial config
     async function loadConfig() {
       try {
         const res = await fetch('/api/config');
         const data = await res.json();
+        maxSessionTokens = data.maxSessionTokens || 2000;
         document.getElementById('cfg-model').textContent = data.model;
-        
+        document.getElementById('top-model-name').textContent = data.model + ' · FPT Cloud';
+        document.getElementById('badge-limit').textContent = maxSessionTokens + ' tok';
+        const shortUrl = (data.baseUrl || '').replace('https://', '');
+        document.getElementById('cfg-url').textContent = shortUrl || '…/v1';
+        updateTokenGauge(sessionTokens);
+
         if (customApiKey) {
-          cfgKeyStatus.textContent = "Đã nhập (Custom Key)";
-          cfgKeyStatus.style.color = "var(--accent)";
+          cfgKeyStatus.textContent = 'Custom';
+          cfgKeyStatus.style.color = 'var(--accent)';
         } else if (data.hasApiKey) {
-          cfgKeyStatus.textContent = "Đã cấu hình (.env)";
-          cfgKeyStatus.style.color = "var(--accent)";
+          cfgKeyStatus.textContent = '.env';
+          cfgKeyStatus.style.color = 'var(--accent)';
         } else {
-          cfgKeyStatus.textContent = "Chưa có Key";
-          cfgKeyStatus.style.color = "var(--danger)";
+          cfgKeyStatus.textContent = 'Missing';
+          cfgKeyStatus.style.color = 'var(--danger)';
         }
       } catch (err) {
-        console.error("Config fetch error:", err);
+        console.error('Config fetch error:', err);
       }
     }
 
     loadConfig();
 
-    // Modal controls
     document.getElementById('btn-open-settings').onclick = () => {
       apiKeyInput.value = customApiKey;
       modalOverlay.style.display = 'flex';
     };
-    document.getElementById('btn-close-modal').onclick = () => modalOverlay.style.display = 'none';
-    document.getElementById('btn-cancel-modal').onclick = () => modalOverlay.style.display = 'none';
+    document.getElementById('btn-close-modal').onclick = () => { modalOverlay.style.display = 'none'; };
+    document.getElementById('btn-cancel-modal').onclick = () => { modalOverlay.style.display = 'none'; };
     document.getElementById('btn-save-key').onclick = () => {
       customApiKey = apiKeyInput.value.trim();
-      localStorage.setItem("fpt_api_key", customApiKey);
+      localStorage.setItem('fpt_api_key', customApiKey);
       modalOverlay.style.display = 'none';
       loadConfig();
     };
@@ -792,14 +723,15 @@
     function useSamplePrompt(promptText) {
       chatTextarea.value = promptText;
       chatTextarea.style.height = 'auto';
+      chatTextarea.style.height = Math.min(chatTextarea.scrollHeight, 140) + 'px';
       chatTextarea.focus();
     }
 
     function updateTokenGauge(newTotal) {
-      sessionTokens = newTotal;
-      tokenDisplay.textContent = `${sessionTokens} / ${MAX_SESSION_TOKENS}`;
-      
-      const percentage = Math.min(100, (sessionTokens / MAX_SESSION_TOKENS) * 100);
+      sessionTokens = Math.min(newTotal, maxSessionTokens);
+      tokenDisplay.textContent = `${sessionTokens} / ${maxSessionTokens}`;
+
+      const percentage = Math.min(100, (sessionTokens / maxSessionTokens) * 100);
       tokenProgressFill.style.width = `${percentage}%`;
 
       if (percentage >= 90) {
@@ -810,11 +742,13 @@
         tokenProgressFill.style.backgroundColor = 'var(--accent)';
       }
 
-      if (sessionTokens >= MAX_SESSION_TOKENS) {
+      if (sessionTokens >= maxSessionTokens) {
         limitBanner.style.display = 'flex';
         chatTextarea.disabled = true;
         btnSend.disabled = true;
-        chatTextarea.placeholder = "Đã hết token session (2000/2000). Hãy bấm 'Tạo phiên mới' để reset.";
+        chatTextarea.placeholder = `Hết budget (${maxSessionTokens}/${maxSessionTokens}). New session để reset.`;
+      } else {
+        limitBanner.style.display = 'none';
       }
     }
 
@@ -828,7 +762,7 @@
       limitBanner.style.display = 'none';
       chatTextarea.disabled = false;
       btnSend.disabled = false;
-      chatTextarea.placeholder = "Nhập câu hỏi của bạn (Ấn Enter để gửi, Shift+Enter để xuống dòng)...";
+      chatTextarea.placeholder = 'Nhập câu hỏi của bạn… (Enter gửi, Shift+Enter xuống dòng)';
       chatTextarea.focus();
     }
 
@@ -842,7 +776,9 @@
 
       const avatar = document.createElement('div');
       avatar.className = 'avatar';
-      avatar.innerHTML = role === 'user' ? '<i class="fa-solid fa-user"></i>' : '<i class="fa-solid fa-robot"></i>';
+      avatar.innerHTML = role === 'user'
+        ? '<i class="fa-solid fa-user"></i>'
+        : '<i class="fa-solid fa-robot"></i>';
 
       const content = document.createElement('div');
       content.className = 'message-content';
@@ -852,7 +788,7 @@
         row.appendChild(content);
         row.appendChild(avatar);
       } else {
-        content.innerHTML = marked.parse(text);
+        content.innerHTML = marked.parse(text || '');
         row.appendChild(avatar);
         row.appendChild(content);
       }
@@ -862,23 +798,63 @@
       return content;
     }
 
+    function handleSsePayload(parsed, state) {
+      if (parsed.content) {
+        if (parsed.replace) {
+          state.fullAiText = parsed.content;
+        } else {
+          state.fullAiText += parsed.content;
+        }
+        state.aiContentDiv.innerHTML =
+          marked.parse(state.fullAiText) + '<span class="typing-cursor"></span>';
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+      if (parsed.done && parsed.newSessionTotal !== undefined) {
+        if (parsed.maxSessionTokens) {
+          maxSessionTokens = parsed.maxSessionTokens;
+        }
+        updateTokenGauge(parsed.newSessionTotal);
+        showTurnCost(state.aiContentDiv, parsed);
+      }
+    }
+
+    function showTurnCost(contentDiv, info) {
+      const turn = info.turnTokens || 0;
+      if (!turn) return;
+      const meta = document.createElement('div');
+      meta.className = 'turn-cost';
+      let text =
+        `+${turn} tokens (prompt ${info.promptTokens} · trả lời ${info.completionTokens})` +
+        ` · còn ${Math.max(0, maxSessionTokens - info.newSessionTotal)}`;
+      if (info.droppedMessages) {
+        text += ` · đã cắt ${info.droppedMessages} tin nhắn cũ để tiết kiệm budget`;
+      }
+      meta.textContent = text;
+      contentDiv.appendChild(meta);
+    }
+
     async function sendMessage() {
       const text = chatTextarea.value.trim();
       if (!text || btnSend.disabled) return;
 
+      if (sessionTokens >= maxSessionTokens) {
+        updateTokenGauge(sessionTokens);
+        return;
+      }
+
       chatTextarea.value = '';
       chatTextarea.style.height = '24px';
-      
-      // Append user message
+
       appendMessage('user', text);
       conversationHistory.push({ role: 'user', content: text });
 
-      // Create empty AI response bubble with cursor
       const aiContentDiv = appendMessage('assistant', '');
       aiContentDiv.innerHTML = '<span class="typing-cursor"></span>';
 
       btnSend.disabled = true;
       chatTextarea.disabled = true;
+
+      const state = { fullAiText: '', aiContentDiv };
 
       try {
         const response = await fetch('/api/chat', {
@@ -892,16 +868,16 @@
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          aiContentDiv.innerHTML = `<span style="color: var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> ${errorData.error || 'Đã có lỗi xảy ra.'}</span>`;
-          btnSend.disabled = false;
-          chatTextarea.disabled = false;
+          const errorData = await response.json().catch(() => ({}));
+          aiContentDiv.innerHTML =
+            `<span style="color: var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> ${
+              errorData.error || 'Đã có lỗi xảy ra.'
+            }</span>`;
           return;
         }
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder('utf-8');
-        let fullAiText = '';
         let streamBuffer = '';
 
         while (true) {
@@ -910,55 +886,37 @@
 
           streamBuffer += decoder.decode(value, { stream: true });
           const lines = streamBuffer.split('\n');
-          // Keep the last potentially incomplete line in the buffer
           streamBuffer = lines.pop() || '';
 
           for (const line of lines) {
             const trimmed = line.trim();
-            if (trimmed.startsWith('data: ')) {
-              const rawJson = trimmed.substring(6).trim();
-              if (!rawJson) continue;
-
-              try {
-                const parsed = JSON.parse(rawJson);
-                if (parsed.content) {
-                  fullAiText += parsed.content;
-                  aiContentDiv.innerHTML = marked.parse(fullAiText) + '<span class="typing-cursor"></span>';
-                  messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                }
-
-                if (parsed.done && parsed.newSessionTotal !== undefined) {
-                  updateTokenGauge(parsed.newSessionTotal);
-                }
-              } catch (e) {
-                console.error("SSE parse error:", e, rawJson);
-              }
+            if (!trimmed.startsWith('data: ')) continue;
+            const rawJson = trimmed.substring(6).trim();
+            if (!rawJson) continue;
+            try {
+              handleSsePayload(JSON.parse(rawJson), state);
+            } catch (e) {
+              console.error('SSE parse error:', e, rawJson);
             }
           }
         }
 
-        // Handle any remaining stream buffer
         if (streamBuffer.trim().startsWith('data: ')) {
           try {
-            const rawJson = streamBuffer.trim().substring(6).trim();
-            const parsed = JSON.parse(rawJson);
-            if (parsed.content) {
-              fullAiText += parsed.content;
-            }
-            if (parsed.done && parsed.newSessionTotal !== undefined) {
-              updateTokenGauge(parsed.newSessionTotal);
-            }
-          } catch(e) {}
+            handleSsePayload(
+              JSON.parse(streamBuffer.trim().substring(6).trim()),
+              state
+            );
+          } catch (e) {}
         }
 
-        // Final render without cursor
-        aiContentDiv.innerHTML = marked.parse(fullAiText);
-        conversationHistory.push({ role: 'assistant', content: fullAiText });
-
+        aiContentDiv.innerHTML = marked.parse(state.fullAiText || '_(empty response)_');
+        conversationHistory.push({ role: 'assistant', content: state.fullAiText });
       } catch (err) {
-        aiContentDiv.innerHTML = `<span style="color: var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> Lỗi kết nối Server: ${err.message}</span>`;
+        aiContentDiv.innerHTML =
+          `<span style="color: var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> Lỗi kết nối: ${err.message}</span>`;
       } finally {
-        if (sessionTokens < MAX_SESSION_TOKENS) {
+        if (sessionTokens < maxSessionTokens) {
           btnSend.disabled = false;
           chatTextarea.disabled = false;
           chatTextarea.focus();

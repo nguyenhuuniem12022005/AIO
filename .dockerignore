@@ -1,0 +1,8 @@
+.env
+.git
+.gitignore
+.vercel
+__pycache__/
+*.pyc
+run.bat
+README.md

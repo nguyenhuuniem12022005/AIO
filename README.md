@@ -1,64 +1,126 @@
-# 🤖 FPT Cloud AI Web Chatbot (ChatGPT-like UI)
+# FPT AI Chatbot
 
-Ứng dụng Web Chatbot giao diện ChatGPT-like miễn phí kết nối với **FPT Cloud API** (Model: `GLM-5.2` / `Qwen3.6-27B`) với tính năng giới hạn và đếm **2000 tokens/session**.
+Web chatbot hội thoại kiểu ChatGPT / Gemini, chạy trên **FPT AI Marketplace** (OpenAI-compatible API). Mỗi phiên giới hạn **2000 tokens**.
 
----
-
-## ✨ Tính năng nổi bật
-
-- 🎨 **Giao diện ChatGPT-like**: Modern Dark Theme (Obsidian & Emerald accent), phản hồi gõ chữ real-time (Server-Sent Events streaming).
-- ⚡ **Thanh Đếm Token Trực Quan**: Hiển thị `X / 2000 Tokens` theo từng lượt hỏi đáp, tự động đổi màu cảnh báo (Green -> Yellow -> Red) và khóa ô chat khi vượt hạn mức 2000 token.
-- 🔄 **Nút Tạo Phiên Mới**: Reset token về 0 và làm sạch hội thoại cho bài luyện tập tiếp theo.
-- 📝 **Markdown & Code Highlighting**: Tô màu code block tự động với nút copy code tiện lợi.
-- 🐳 **Hỗ trợ Docker & Docker Compose**: Đóng gói sẵn sàng chạy container trên server/vps với 1 câu lệnh.
+| Field | Value |
+|--------|--------|
+| Base URL | `https://mkp-api.fptcloud.com/v1` |
+| Model | `Llama-3.3-70B-Instruct` |
+| Auth | `Authorization: Bearer <API_KEY>` |
+| Session cap | `MAX_SESSION_TOKENS=2000` |
 
 ---
 
-## 🛠️ Hướng dẫn Chạy cục bộ (Local)
+## Tính năng
 
-### 1. Cấu hình file `.env`
-Sao chép `.env.example` thành `.env` và cập nhật API Key của bạn:
+- Trả lời streaming từng chữ (SSE), markdown + highlight code
+- Thanh đếm `X / 2000` tokens, khóa input khi hết budget
+- **New session** — reset hội thoại và token về 0
+- Ẩn hoàn toàn phần suy luận nội bộ (`reasoning_content`, `<think>`) khỏi UI
+- API Key qua `.env` hoặc modal trên UI (lưu localStorage)
+
+---
+
+## Cách đếm 2000 tokens/session
+
+Không dùng ước lượng — lấy **`usage` thật** do API FPT trả về trong stream
+(`stream_options: {include_usage: true}`).
+
+Mỗi lượt cộng vào budget: `prompt_tokens + completion_tokens`. Trong đó
+`prompt_tokens` gồm system prompt + toàn bộ lịch sử hội thoại được gửi lại,
+đúng như FPT tính phí.
+
+Bốn lớp bảo vệ để không bao giờ vượt 2000:
+
+1. **Tự cắt lịch sử** — khi budget còn ít, các lượt cũ nhất bị bỏ khỏi prompt
+   (luôn giữ system prompt + câu hỏi mới nhất) để vẫn chat tiếp được.
+2. **Trước khi gọi API** — nếu prompt vẫn không vừa thì chặn kèm thông báo rõ ràng.
+3. **Khi gọi API** — `max_tokens` đặt bằng đúng phần budget còn lại.
+4. **Trong lúc stream** — theo dõi `usage` từng chunk, đụng hạn mức là dừng ngay.
+
+Dưới mỗi câu trả lời có dòng chi phí thật của lượt đó:
+`+N tokens (prompt X · trả lời Y) · còn Z`, kèm số tin nhắn cũ đã cắt nếu có.
+
+System prompt được giữ rất ngắn vì nó bị tính lại ở **mọi** lượt trong session.
+
+---
+
+## Chọn model — quan trọng
+
+Dùng **model instruct** (trả lời trực tiếp). Các model reasoning tiêu hết token cho phần suy luận nội bộ, nên với budget 2000 tokens sẽ không kịp sinh câu trả lời:
+
+| Model | Phù hợp? |
+|--------|-----------|
+| `Llama-3.3-70B-Instruct` | Có — mặc định |
+| `gemma-4-31B-it` | Có |
+| `gemma-3-27b-it` | Có |
+| `Qwen3.6-27B` | Không — reasoning model |
+| `DeepSeek-V4-Flash` | Không — reasoning model |
+| `GLM-5.2` | Không — reasoning model |
+
+Nếu model chính không trả về nội dung, app tự thử lại với `FPT_FALLBACK_MODEL`.
+
+---
+
+## Chạy local
+
+### 1. `.env`
+
+```bash
+cp .env.example .env
+```
+
 ```env
-FPT_BASE_URL=https://mkp-api.fptcloud.com
-FPT_MODEL=GLM-5.2
-FPT_API_KEY=sk-your-fpt-api-key-here
+FPT_BASE_URL=https://mkp-api.fptcloud.com/v1
+FPT_MODEL=Llama-3.3-70B-Instruct
+FPT_FALLBACK_MODEL=gemma-4-31B-it
+FPT_API_KEY=sk-your-fpt-api-key
 MAX_SESSION_TOKENS=2000
 ```
 
-### 2. Khởi chạy bằng Python
+Tạo key tại [marketplace.fptcloud.com](https://marketplace.fptcloud.com/).
+
+### 2. Python
+
 ```bash
 pip install -r requirements.txt
 python app.py
 ```
-Mở trình duyệt tại [http://localhost:5000](http://localhost:5000).
+
+Mở [http://localhost:5000](http://localhost:5000).
 
 ---
 
-## 🐳 Khởi chạy bằng Docker / Docker Compose
+## Docker
 
-### Cách 1: Sử dụng Docker Compose (Khuyên dùng)
 ```bash
 docker compose up -d --build
 ```
 
-### Cách 2: Sử dụng Docker CLI
-```bash
-# Build image
-docker build -t fpt-ai-chatbot .
+hoặc:
 
-# Run container
+```bash
+docker build -t fpt-ai-chatbot .
 docker run -d -p 5000:5000 --env-file .env --name fpt_chatbot fpt-ai-chatbot
+```
+
+Xem log:
+
+```bash
+docker compose logs -f
 ```
 
 ---
 
-## 🚀 Triển khai lên Vercel
+## Vercel
 
 ```bash
 npx vercel
 ```
-Hoặc kết nối Repository GitHub này với [Vercel](https://vercel.com) và thêm các biến môi trường trong **Project Settings > Environment Variables**:
-- `FPT_BASE_URL` = `https://mkp-api.fptcloud.com`
-- `FPT_MODEL` = `GLM-5.2`
-- `FPT_API_KEY` = `your-api-key`
+
+Env trên Vercel:
+
+- `FPT_BASE_URL` = `https://mkp-api.fptcloud.com/v1`
+- `FPT_MODEL` = `Llama-3.3-70B-Instruct`
+- `FPT_API_KEY` = key của bạn
 - `MAX_SESSION_TOKENS` = `2000`
