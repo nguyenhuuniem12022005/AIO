@@ -136,9 +136,9 @@ def chat():
                             continue
                         delta = choices[0].get("delta", {})
 
-                        # Chỉ hiển thị content (câu trả lời thật) ra UI
-                        # reasoning_content là phần suy nghĩ nội bộ → bỏ qua hoàn toàn
-                        chunk_text = delta.get("content") or ""
+                        # content = câu trả lời; reasoning_content = suy nghĩ nội bộ
+                        # FPT Cloud GLM-5.2 thường chỉ dùng reasoning_content
+                        chunk_text = delta.get("content") or delta.get("reasoning_content") or ""
                         if chunk_text:
                             completion_text += chunk_text
                             yield f"data: {json.dumps({'content': chunk_text})}\n\n"
