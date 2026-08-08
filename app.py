@@ -18,8 +18,10 @@ DEFAULT_BASE_URL = "https://mkp-api.fptcloud.com/v1"
 # Các model reasoning (Qwen3.6-27B, DeepSeek-V4-Flash, GLM-5.2) đốt hết token
 # vào reasoning_content nên content rỗng khi max_tokens nhỏ.
 DEFAULT_MODEL = "Llama-3.3-70B-Instruct"
-FALLBACK_MODEL = os.getenv("FPT_FALLBACK_MODEL", DEFAULT_MODEL)
+FALLBACK_MODEL = os.getenv("FPT_FALLBACK_MODEL", "gemma-4-31B-it")
 MAX_SESSION_TOKENS = int(os.getenv("MAX_SESSION_TOKENS", "2000"))
+# Giới hạn mỗi lượt trả lời — 512 hợp lý với budget 2000/session (~3–5 lượt)
+MAX_COMPLETION_TOKENS = int(os.getenv("MAX_COMPLETION_TOKENS", "512"))
 
 FPT_BASE_URL = os.getenv("FPT_BASE_URL", DEFAULT_BASE_URL)
 FPT_MODEL = os.getenv("FPT_MODEL", DEFAULT_MODEL)
@@ -113,7 +115,7 @@ CHATBOT_SYSTEM = (
 )
 
 # Token tối thiểu chừa cho câu trả lời khi cắt lịch sử
-ANSWER_RESERVE_TOKENS = 150
+ANSWER_RESERVE_TOKENS = min(256, MAX_COMPLETION_TOKENS)
 # Ước lượng có thể thấp hơn thực tế → nhân thêm biên an toàn khi quyết định cắt
 TRIM_SAFETY = 1.15
 
@@ -148,9 +150,10 @@ def load_runtime_config():
     return {
         "base_url": normalize_base_url(os.getenv("FPT_BASE_URL", DEFAULT_BASE_URL)),
         "model": os.getenv("FPT_MODEL", DEFAULT_MODEL),
-        "fallback_model": os.getenv("FPT_FALLBACK_MODEL", DEFAULT_MODEL),
+        "fallback_model": os.getenv("FPT_FALLBACK_MODEL", "gemma-4-31B-it"),
         "api_key": os.getenv("FPT_API_KEY", ""),
         "max_session_tokens": int(os.getenv("MAX_SESSION_TOKENS", "2000")),
+        "max_completion_tokens": int(os.getenv("MAX_COMPLETION_TOKENS", "512")),
     }
 
 
@@ -167,6 +170,7 @@ def get_config():
         "baseUrl": cfg["base_url"],
         "model": cfg["model"],
         "maxSessionTokens": cfg["max_session_tokens"],
+        "maxCompletionTokens": cfg["max_completion_tokens"],
         "hasApiKey": bool(api_key and api_key != "your-api-key-here"),
     })
 
@@ -218,7 +222,8 @@ def chat():
         }), 400
 
     remaining = max_session_tokens - session_used_tokens - estimated_prompt
-    max_tokens_for_model = max(16, min(900, remaining))
+    max_completion = cfg["max_completion_tokens"]
+    max_tokens_for_model = max(16, min(max_completion, remaining))
 
     try:
         client = OpenAI(

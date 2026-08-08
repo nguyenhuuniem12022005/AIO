@@ -7,6 +7,7 @@ ENV PYTHONUNBUFFERED=1
 ENV FPT_BASE_URL=https://mkp-api.fptcloud.com/v1
 ENV FPT_MODEL=Llama-3.3-70B-Instruct
 ENV MAX_SESSION_TOKENS=2000
+ENV MAX_COMPLETION_TOKENS=512
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \

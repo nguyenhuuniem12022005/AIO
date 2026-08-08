@@ -5,9 +5,10 @@ Web chatbot hội thoại kiểu ChatGPT / Gemini, chạy trên **FPT AI Marketp
 | Field | Value |
 |--------|--------|
 | Base URL | `https://mkp-api.fptcloud.com/v1` |
-| Model | `Llama-3.3-70B-Instruct` |
+| Model | `Llama-3.3-70B-Instruct` (fallback: `gemma-4-31B-it`) |
 | Auth | `Authorization: Bearer <API_KEY>` |
 | Session cap | `MAX_SESSION_TOKENS=2000` |
+| Per-reply cap | `MAX_COMPLETION_TOKENS=512` |
 
 ---
 
@@ -35,7 +36,7 @@ Bốn lớp bảo vệ để không bao giờ vượt 2000:
 1. **Tự cắt lịch sử** — khi budget còn ít, các lượt cũ nhất bị bỏ khỏi prompt
    (luôn giữ system prompt + câu hỏi mới nhất) để vẫn chat tiếp được.
 2. **Trước khi gọi API** — nếu prompt vẫn không vừa thì chặn kèm thông báo rõ ràng.
-3. **Khi gọi API** — `max_tokens` đặt bằng đúng phần budget còn lại.
+3. **Khi gọi API** — `max_tokens` = `min(512, phần budget còn lại)` để mỗi câu không nuốt hết session.
 4. **Trong lúc stream** — theo dõi `usage` từng chunk, đụng hạn mức là dừng ngay.
 
 Dưới mỗi câu trả lời có dòng chi phí thật của lượt đó:
@@ -52,7 +53,7 @@ Dùng **model instruct** (trả lời trực tiếp). Các model reasoning tiêu
 | Model | Phù hợp? |
 |--------|-----------|
 | `Llama-3.3-70B-Instruct` | Có — mặc định |
-| `gemma-4-31B-it` | Có |
+| `gemma-4-31B-it` | Có — fallback |
 | `gemma-3-27b-it` | Có |
 | `Qwen3.6-27B` | Không — reasoning model |
 | `DeepSeek-V4-Flash` | Không — reasoning model |
@@ -76,6 +77,7 @@ FPT_MODEL=Llama-3.3-70B-Instruct
 FPT_FALLBACK_MODEL=gemma-4-31B-it
 FPT_API_KEY=sk-your-fpt-api-key
 MAX_SESSION_TOKENS=2000
+MAX_COMPLETION_TOKENS=512
 ```
 
 Tạo key tại [marketplace.fptcloud.com](https://marketplace.fptcloud.com/).
@@ -124,3 +126,4 @@ Env trên Vercel:
 - `FPT_MODEL` = `Llama-3.3-70B-Instruct`
 - `FPT_API_KEY` = key của bạn
 - `MAX_SESSION_TOKENS` = `2000`
+- `MAX_COMPLETION_TOKENS` = `512`
