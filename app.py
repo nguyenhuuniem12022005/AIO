@@ -121,7 +121,8 @@ def chat():
                 temperature=0.7,
                 max_tokens=max_tokens_for_model,
                 top_p=0.95,
-                stream=True
+                stream=True,
+                extra_body={"enable_thinking": False}  # Tắt thinking mode của GLM
             ) as response:
                 for line in response.iter_lines():
                     if not line or line == "data: [DONE]":
@@ -135,8 +136,11 @@ def chat():
                             continue
                         delta = choices[0].get("delta", {})
 
-                        # Đọc cả content lẫn reasoning_content (GLM-5.2 dùng reasoning_content)
-                        chunk_text = delta.get("content") or delta.get("reasoning_content") or ""
+                        # Ưu tiên content (câu trả lời thật), fallback sang reasoning_content
+                        chunk_text = delta.get("content") or ""
+                        if not chunk_text:
+                            # Chỉ dùng reasoning_content nếu content rỗng hẳn
+                            chunk_text = delta.get("reasoning_content") or ""
                         if chunk_text:
                             completion_text += chunk_text
                             yield f"data: {json.dumps({'content': chunk_text})}\n\n"
