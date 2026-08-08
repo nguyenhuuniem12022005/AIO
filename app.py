@@ -144,6 +144,18 @@ def chat():
                                     thinking_buffer = thinking_buffer[end + len('</think>'):]
                                     in_thinking = False
 
+            # Sau khi stream kết thúc: flush phần còn lại trong thinking_buffer
+            # (trường hợp GLM kết thúc stream khi vẫn đang trong <think>)
+            if thinking_buffer:
+                if in_thinking:
+                    # Chưa thấy </think> → bỏ thẻ <think> và lấy nội dung còn lại
+                    leftover = thinking_buffer.replace('<think>', '').strip()
+                else:
+                    leftover = thinking_buffer.strip()
+                if leftover:
+                    completion_text += leftover
+                    yield f"data: {json.dumps({'content': leftover})}\n\n"
+
             # After stream completes, calculate final usage
             completion_tokens = estimate_tokens(completion_text)
             new_session_total = current_total_tokens + completion_tokens
