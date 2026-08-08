@@ -122,7 +122,7 @@ def chat():
                 max_tokens=max_tokens_for_model,
                 top_p=0.95,
                 stream=True,
-                extra_body={"enable_thinking": False}  # Tắt thinking mode của GLM
+                extra_body={"enable_thinking": False}  # False: output vào content field; True: chỉ có reasoning_content → UI trống
             ) as response:
                 for line in response.iter_lines():
                     if not line or line == "data: [DONE]":
