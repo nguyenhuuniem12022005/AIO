@@ -74,8 +74,9 @@ def chat():
     if not messages:
         return jsonify({"error": "Danh sách tin nhắn không được để trống!"}), 400
 
-    # Calculate prompt tokens for current messages
-    prompt_tokens = estimate_tokens(messages)
+    # Chỉ tính token của tin nhắn MỚI NHẤT (session_used_tokens đã đếm lịch sử rồi)
+    new_message_content = messages[-1].get("content", "") if messages else ""
+    prompt_tokens = estimate_tokens(new_message_content)
     current_total_tokens = session_used_tokens + prompt_tokens
 
     if current_total_tokens >= max_session_tokens:
@@ -84,7 +85,7 @@ def chat():
         }), 400
 
     remaining_tokens = max_session_tokens - current_total_tokens
-    max_tokens_for_model = min(1024, max(300, remaining_tokens))  # tối thiểu 200 để model có thể trả lời
+    max_tokens_for_model = min(1024, max(300, remaining_tokens))
 
     try:
         client = OpenAI(
