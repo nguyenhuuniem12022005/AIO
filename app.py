@@ -78,6 +78,7 @@ def chat():
     system_prompt = {
         "role": "system",
         "content": (
+            "/no_think\n"  # Tắt thinking mode của Qwen3 & GLM
             "Bạn là trợ lý AI chuyên hỗ trợ thí sinh tham gia cuộc thi Olympic AI. "
             "Bạn có kiến thức sâu về: lập trình, thuật toán, machine learning, deep learning, "
             "toán học, thống kê và các chủ đề liên quan đến AI. "
